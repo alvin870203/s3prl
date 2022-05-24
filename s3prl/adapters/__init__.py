@@ -20,7 +20,7 @@ __version__ = "3.0.1"
 
 from typing import TYPE_CHECKING
 
-# from ..file_utils import _LazyModule
+from ..file_utils import _LazyModule
 
 
 _import_structure = {
@@ -60,21 +60,21 @@ _import_structure = {
         "AdapterSetup",
         "ForwardContext",
     ],
-    "heads": [
-        "BertStyleMaskedLMHead",
-        "BiaffineParsingHead",
-        "CausalLMHead",
-        "ClassificationHead",
-        "DependencyParsingOutput",
-        "ModelWithFlexibleHeadsAdaptersMixin",
-        "MultiHeadOutput",
-        "MultiLabelClassificationHead",
-        "MultipleChoiceHead",
-        "PredictionHead",
-        "QuestionAnsweringHead",
-        "Seq2SeqLMHead",
-        "TaggingHead",
-    ],
+    # "heads": [
+    #     "BertStyleMaskedLMHead",
+    #     "BiaffineParsingHead",
+    #     "CausalLMHead",
+    #     "ClassificationHead",
+    #     "DependencyParsingOutput",
+    #     "ModelWithFlexibleHeadsAdaptersMixin",
+    #     "MultiHeadOutput",
+    #     "MultiLabelClassificationHead",
+    #     "MultipleChoiceHead",
+    #     "PredictionHead",
+    #     "QuestionAnsweringHead",
+    #     "Seq2SeqLMHead",
+    #     "TaggingHead",
+    # ],
     "layer": ["AdapterLayer", "AdapterLayerBase"],
     "model_mixin": [
         "InvertibleAdaptersMixin",
@@ -123,7 +123,7 @@ _import_structure = {
         "XLMRobertaAdapterModel",
         "XLMRobertaModelWithHeads",
     ],
-    "trainer": ["AdapterTrainer", "Seq2SeqAdapterTrainer"],
+    # "trainer": ["AdapterTrainer", "Seq2SeqAdapterTrainer"],
     "training": [
         "AdapterArguments",
         "MultiLingAdapterArguments",
@@ -173,21 +173,21 @@ if TYPE_CHECKING:
         StaticAdapterFusionConfig,
     )
     from .context import AdapterSetup, ForwardContext
-    from .heads import (
-        BertStyleMaskedLMHead,
-        BiaffineParsingHead,
-        CausalLMHead,
-        ClassificationHead,
-        DependencyParsingOutput,
-        ModelWithFlexibleHeadsAdaptersMixin,
-        MultiHeadOutput,
-        MultiLabelClassificationHead,
-        MultipleChoiceHead,
-        PredictionHead,
-        QuestionAnsweringHead,
-        Seq2SeqLMHead,
-        TaggingHead,
-    )
+    # from .heads import (
+    #     BertStyleMaskedLMHead,
+    #     BiaffineParsingHead,
+    #     CausalLMHead,
+    #     ClassificationHead,
+    #     DependencyParsingOutput,
+    #     ModelWithFlexibleHeadsAdaptersMixin,
+    #     MultiHeadOutput,
+    #     MultiLabelClassificationHead,
+    #     MultipleChoiceHead,
+    #     PredictionHead,
+    #     QuestionAnsweringHead,
+    #     Seq2SeqLMHead,
+    #     TaggingHead,
+    # )
     from .layer import AdapterLayer, AdapterLayerBase
     from .model_mixin import InvertibleAdaptersMixin, ModelAdaptersMixin, ModelWithHeadsAdaptersMixin
     from .models.auto import ADAPTER_MODEL_MAPPING, MODEL_WITH_HEADS_MAPPING, AutoAdapterModel, AutoModelWithHeads
@@ -200,7 +200,7 @@ if TYPE_CHECKING:
     from .models.roberta import RobertaAdapterModel, RobertaModelWithHeads
     from .models.t5 import T5AdapterModel, T5ModelWithHeads
     from .models.xlm_roberta import XLMRobertaAdapterModel, XLMRobertaModelWithHeads
-    from .trainer import AdapterTrainer, Seq2SeqAdapterTrainer
+    # from .trainer import AdapterTrainer, Seq2SeqAdapterTrainer
     from .training import AdapterArguments, MultiLingAdapterArguments
     from .utils import (
         ADAPTER_CACHE,
@@ -211,12 +211,12 @@ if TYPE_CHECKING:
         list_adapters,
     )
 
-# else:
-#     import sys
+else:
+    import sys
 
-#     sys.modules[__name__] = _LazyModule(
-#         __name__,
-#         globals()["__file__"],
-#         _import_structure,
-#         extra_objects={"__version__": __version__},
-#     )
+    sys.modules[__name__] = _LazyModule(
+        __name__,
+        globals()["__file__"],
+        _import_structure,
+        extra_objects={"__version__": __version__},
+    )

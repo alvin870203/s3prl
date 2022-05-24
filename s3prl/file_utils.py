@@ -53,12 +53,14 @@ from requests.exceptions import HTTPError
 from transformers.utils.logging import tqdm
 from transformers.utils.versions import importlib_metadata
 
-from . import __version__
+# from . import __version__
+__version__ = "4.17.0"
 # from .utils import logging
 import logging
 
 
-logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
+# logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
+logger = logging.getLogger(__name__)
 
 ENV_VARS_TRUE_VALUES = {"1", "ON", "YES", "TRUE"}
 ENV_VARS_TRUE_AND_AUTO_VALUES = ENV_VARS_TRUE_VALUES.union({"AUTO"})
