@@ -19,10 +19,18 @@ import numpy as np
 from io import open
 from torch import nn
 
+from typing import Optional, Tuple
+from ...adapters.composition import adjust_tensors_for_parallel  # FIXME: not sure where to add
+from ...adapters.context import ForwardContext
+from ...adapters.mixins.transformer import TransformerModelAdaptersMixin, TransformerOutputAdaptersMixin, TransformerSelfOutputAdaptersMixin
+# from ...adapters.model_mixin import ModelWithHeadsAdaptersMixin
+from ...adapters.prefix_tuning import PrefixTuningShim
+
 
 class TransformerConfig(object):
     """Configuration class to store the configuration of a `TransformerModel`.
     """
+    model_type = "transformer"
     def __init__(self, config):
         self.hidden_size = int(config['hidden_size'])
         self.num_hidden_layers = int(config['num_hidden_layers'])
@@ -117,7 +125,7 @@ class TransformerInputRepresentations(nn.Module):
 
 
 class TransformerSelfAttention(nn.Module):
-    def __init__(self, config, output_attentions=False, keep_multihead_output=False):
+    def __init__(self, config, output_attentions=False, keep_multihead_output=False, location_key: Optional[str] = None):
         super(TransformerSelfAttention, self).__init__()
         if config.hidden_size % config.num_attention_heads != 0:
             raise ValueError(
@@ -136,6 +144,8 @@ class TransformerSelfAttention(nn.Module):
         self.value = nn.Linear(config.hidden_size, self.all_head_size)
 
         self.dropout = nn.Dropout(config.attention_probs_dropout_prob)
+        
+        self.prefix_tuning = PrefixTuningShim(location_key + "_prefix" if location_key else None, config)
 
     def transpose_for_scores(self, x):
         new_x_shape = x.size()[:-1] + (self.num_attention_heads, self.attention_head_size)
@@ -152,6 +162,8 @@ class TransformerSelfAttention(nn.Module):
         key_layer = self.transpose_for_scores(mixed_key_layer)
         value_layer = self.transpose_for_scores(mixed_value_layer)
         # each layer: (batch_size, head_num, seqlen, head_dim)
+        
+        key_layer, value_layer, attention_mask = self.prefix_tuning(key_layer, value_layer, attention_mask)
 
         # Take the dot product between "query" and "key" to get the raw attention scores.
         attention_scores = torch.matmul(query_layer, key_layer.transpose(-1, -2))
@@ -185,30 +197,38 @@ class TransformerSelfAttention(nn.Module):
         return context_layer
 
 
-class TransformerSelfOutput(nn.Module):
+class TransformerSelfOutput(TransformerSelfOutputAdaptersMixin, nn.Module):
     def __init__(self, config):
         super(TransformerSelfOutput, self).__init__()
+        self.config = config
+        
         self.pre_layer_norm = config.pre_layer_norm
         self.dense = nn.Linear(config.hidden_size, config.hidden_size)
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
         self.LayerNorm = TransformerLayerNorm(config.hidden_size, eps=config.layer_norm_eps)
+        self._init_adapter_modules()
 
     def forward(self, hidden_states, input_tensor):
         hidden_states = self.dense(hidden_states)
         hidden_states = self.dropout(hidden_states)
-        hidden_states = hidden_states + input_tensor
+        # hidden_states = hidden_states + input_tensor
+        # if not self.pre_layer_norm:
+        #     hidden_states = self.LayerNorm(hidden_states)
         if not self.pre_layer_norm:
-            hidden_states = self.LayerNorm(hidden_states)
+            hidden_states = self.adapter_layer_forward(hidden_states, input_tensor, self.LayerNorm)
+        else:
+            hidden_states = self.adapter_layer_forward(hidden_states, input_tensor)
         return hidden_states
 
 
 class TransformerAttention(nn.Module):
-    def __init__(self, config, output_attentions=False, keep_multihead_output=False):
+    def __init__(self, config, output_attentions=False, keep_multihead_output=False, location_key: Optional[str] = None):
         super(TransformerAttention, self).__init__()
         self.output_attentions = output_attentions
         self.pre_layer_norm = config.pre_layer_norm
         self.self = TransformerSelfAttention(config, output_attentions=output_attentions,
-                                              keep_multihead_output=keep_multihead_output)
+                                              keep_multihead_output=keep_multihead_output,
+                                              location_key=location_key)
         self.output = TransformerSelfOutput(config)
         if self.pre_layer_norm:
             self.LayerNorm = self.output.LayerNorm
@@ -261,20 +281,27 @@ class TransformerIntermediate(nn.Module):
         return hidden_states
 
 
-class TransformerOutput(nn.Module):
+class TransformerOutput(TransformerOutputAdaptersMixin, nn.Module):
     def __init__(self, config):
         super(TransformerOutput, self).__init__()
+        self.config = config
+        
         self.pre_layer_norm = config.pre_layer_norm
         self.dense = nn.Linear(config.intermediate_size, config.hidden_size)
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
         self.LayerNorm = TransformerLayerNorm(config.hidden_size, eps=config.layer_norm_eps) # layer_norm for FFN
+        self._init_adapter_modules()
 
     def forward(self, hidden_states, input_tensor):
         hidden_states = self.dense(hidden_states)
         hidden_states = self.dropout(hidden_states)
-        hidden_states = hidden_states + input_tensor
+        # hidden_states = hidden_states + input_tensor
+        # if not self.pre_layer_norm:
+        #     hidden_states = self.LayerNorm(hidden_states)
         if not self.pre_layer_norm:
-            hidden_states = self.LayerNorm(hidden_states)
+            hidden_states = self.adapter_layer_forward(hidden_states, input_tensor, self.LayerNorm)
+        else:
+            hidden_states = self.adapter_layer_forward(hidden_states, input_tensor)
         return hidden_states
 
 
@@ -284,7 +311,8 @@ class TransformerLayer(nn.Module):
         self.output_attentions = output_attentions
         self.pre_layer_norm = config.pre_layer_norm
         self.attention = TransformerAttention(config, output_attentions=output_attentions,
-                                               keep_multihead_output=keep_multihead_output)
+                                               keep_multihead_output=keep_multihead_output,
+                                               location_key="self")
         self.intermediate = TransformerIntermediate(config)
         self.output = TransformerOutput(config)
         if self.pre_layer_norm:
@@ -392,7 +420,7 @@ class TransformerInitModel(nn.Module):
             module.bias.data.zero_()
 
 
-class TransformerModel(TransformerInitModel):
+class TransformerModel(TransformerModelAdaptersMixin, TransformerInitModel):
     """Transformer model.
 
     Params:
@@ -443,6 +471,10 @@ class TransformerModel(TransformerInitModel):
         if self.with_input_module: self.input_representations = TransformerInputRepresentations(config, input_dim)
         self.encoder = TransformerEncoder(config, output_attentions=output_attentions,
                                           keep_multihead_output=keep_multihead_output)
+        self.config = config
+        
+        self._init_adapter_modules()
+        
         self.apply(self.init_Transformer_weights)
 
     def prune_heads(self, heads_to_prune):
@@ -458,6 +490,7 @@ class TransformerModel(TransformerInitModel):
         """
         return [layer.attention.self.multihead_output for layer in self.encoder.layer]
 
+    @ForwardContext.wrap
     def forward(self, spec_input, pos_enc=None, attention_mask=None, output_all_encoded_layers=True, head_mask=None):
         if attention_mask is None:
             attention_mask = torch.ones_like(spec_input)

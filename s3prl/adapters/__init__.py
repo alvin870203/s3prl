@@ -81,48 +81,48 @@ _import_structure = {
         "ModelAdaptersMixin",
         "ModelWithHeadsAdaptersMixin",
     ],
-    "models.auto": [
-        "ADAPTER_MODEL_MAPPING",
-        "MODEL_WITH_HEADS_MAPPING",
-        "AutoAdapterModel",
-        "AutoModelWithHeads",
-    ],
-    "models.bart": [
-        "BartAdapterModel",
-        "BartModelWithHeads",
-    ],
-    "models.bert": [
-        "BertAdapterModel",
-        "BertModelWithHeads",
-    ],
-    "models.distilbert": [
-        "DistilBertAdapterModel",
-        "DistilBertModelWithHeads",
-    ],
-    "models.electra": [
-        "ElectraAdapterModel",
-        "ElectraModelWithHeads",
-    ],
-    "models.gpt2": [
-        "GPT2AdapterModel",
-        "GPT2ModelWithHeads",
-    ],
-    "models.mbart": [
-        "MBartAdapterModel",
-        "MBartModelWithHeads",
-    ],
-    "models.roberta": [
-        "RobertaAdapterModel",
-        "RobertaModelWithHeads",
-    ],
-    "models.t5": [
-        "T5AdapterModel",
-        "T5ModelWithHeads",
-    ],
-    "models.xlm_roberta": [
-        "XLMRobertaAdapterModel",
-        "XLMRobertaModelWithHeads",
-    ],
+    # "models.auto": [
+    #     "ADAPTER_MODEL_MAPPING",
+    #     "MODEL_WITH_HEADS_MAPPING",
+    #     "AutoAdapterModel",
+    #     "AutoModelWithHeads",
+    # ],
+    # "models.bart": [
+    #     "BartAdapterModel",
+    #     "BartModelWithHeads",
+    # ],
+    # "models.bert": [
+    #     "BertAdapterModel",
+    #     "BertModelWithHeads",
+    # ],
+    # "models.distilbert": [
+    #     "DistilBertAdapterModel",
+    #     "DistilBertModelWithHeads",
+    # ],
+    # "models.electra": [
+    #     "ElectraAdapterModel",
+    #     "ElectraModelWithHeads",
+    # ],
+    # "models.gpt2": [
+    #     "GPT2AdapterModel",
+    #     "GPT2ModelWithHeads",
+    # ],
+    # "models.mbart": [
+    #     "MBartAdapterModel",
+    #     "MBartModelWithHeads",
+    # ],
+    # "models.roberta": [
+    #     "RobertaAdapterModel",
+    #     "RobertaModelWithHeads",
+    # ],
+    # "models.t5": [
+    #     "T5AdapterModel",
+    #     "T5ModelWithHeads",
+    # ],
+    # "models.xlm_roberta": [
+    #     "XLMRobertaAdapterModel",
+    #     "XLMRobertaModelWithHeads",
+    # ],
     # "trainer": ["AdapterTrainer", "Seq2SeqAdapterTrainer"],
     "training": [
         "AdapterArguments",
