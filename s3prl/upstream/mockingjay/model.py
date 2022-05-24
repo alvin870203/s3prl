@@ -32,8 +32,8 @@ class TransformerConfig(PretrainedConfig):
     """Configuration class to store the configuration of a `TransformerModel`.
     """
     model_type = "transformer"
-    def __init__(self, config=None):
-        super().__init__()
+    def __init__(self, config=None, **kwargs):
+        super().__init__(**kwargs)
         if config is not None:
             self.hidden_size = int(config['hidden_size'])
             self.num_hidden_layers = int(config['num_hidden_layers'])
@@ -46,18 +46,18 @@ class TransformerConfig(PretrainedConfig):
             self.layer_norm_eps = float(config['layer_norm_eps'])
             self.share_layer = bool(config['share_layer'])
             self.pre_layer_norm = bool(config['pre_layer_norm'])
-        else:
-            self.hidden_size = None
-            self.num_hidden_layers = None
-            self.num_attention_heads = None
-            self.hidden_act = None
-            self.intermediate_size = None
-            self.hidden_dropout_prob = None
-            self.attention_probs_dropout_prob = None
-            self.initializer_range = None
-            self.layer_norm_eps = None
-            self.share_layer = None
-            self.pre_layer_norm = None
+        # else:
+        #     self.hidden_size = None
+        #     self.num_hidden_layers = None
+        #     self.num_attention_heads = None
+        #     self.hidden_act = None
+        #     self.intermediate_size = None
+        #     self.hidden_dropout_prob = None
+        #     self.attention_probs_dropout_prob = None
+        #     self.initializer_range = None
+        #     self.layer_norm_eps = None
+        #     self.share_layer = None
+        #     self.pre_layer_norm = None
 
 
 def prune_linear_layer(layer, index, dim=0):
@@ -366,8 +366,7 @@ class TransformerEncoder(nn.Module):
         if self.pre_layer_norm:
             # If pre-LN Transformer, a final layer_norm would be placed after the last layer,
             # and intermediate layer_norms for all layer embedding outputs
-            LayerNorm = TransformerLayerNorm(config.hidden_size, eps=config.layer_norm_eps)
-            self.LayerNorm = nn.ModuleList([copy.deepcopy(LayerNorm) for _ in range(config.num_hidden_layers + 1)])
+            self.LayerNorm = nn.ModuleList([TransformerLayerNorm(config.hidden_size, eps=config.layer_norm_eps) for _ in range(config.num_hidden_layers + 1)])
 
     def forward(self, hidden_states, attention_mask, output_all_encoded_layers=True, head_mask=None):
         all_encoder_layers = []
