@@ -19,30 +19,45 @@ import numpy as np
 from io import open
 from torch import nn
 
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Dict, Any
 from ...adapters.composition import adjust_tensors_for_parallel  # FIXME: not sure where to add
 from ...adapters.context import ForwardContext
 from ...adapters.mixins.transformer import TransformerModelAdaptersMixin, TransformerOutputAdaptersMixin, TransformerSelfOutputAdaptersMixin
 # from ...adapters.model_mixin import ModelWithHeadsAdaptersMixin
 from ...adapters.prefix_tuning import PrefixTuningShim
+from ...configuration_utils import PretrainedConfig
 
 
-class TransformerConfig(object):
+class TransformerConfig(PretrainedConfig):
     """Configuration class to store the configuration of a `TransformerModel`.
     """
     model_type = "transformer"
-    def __init__(self, config):
-        self.hidden_size = int(config['hidden_size'])
-        self.num_hidden_layers = int(config['num_hidden_layers'])
-        self.num_attention_heads = int(config['num_attention_heads'])
-        self.hidden_act = str(config['hidden_act'])
-        self.intermediate_size = int(config['intermediate_size'])
-        self.hidden_dropout_prob = float(config['hidden_dropout_prob'])
-        self.attention_probs_dropout_prob = float(config['attention_probs_dropout_prob'])
-        self.initializer_range = float(config['initializer_range'])
-        self.layer_norm_eps = float(config['layer_norm_eps'])
-        self.share_layer = bool(config['share_layer'])
-        self.pre_layer_norm = bool(config['pre_layer_norm'])
+    def __init__(self, config=None):
+        super().__init__()
+        if config is not None:
+            self.hidden_size = int(config['hidden_size'])
+            self.num_hidden_layers = int(config['num_hidden_layers'])
+            self.num_attention_heads = int(config['num_attention_heads'])
+            self.hidden_act = str(config['hidden_act'])
+            self.intermediate_size = int(config['intermediate_size'])
+            self.hidden_dropout_prob = float(config['hidden_dropout_prob'])
+            self.attention_probs_dropout_prob = float(config['attention_probs_dropout_prob'])
+            self.initializer_range = float(config['initializer_range'])
+            self.layer_norm_eps = float(config['layer_norm_eps'])
+            self.share_layer = bool(config['share_layer'])
+            self.pre_layer_norm = bool(config['pre_layer_norm'])
+        else:
+            self.hidden_size = None
+            self.num_hidden_layers = None
+            self.num_attention_heads = None
+            self.hidden_act = None
+            self.intermediate_size = None
+            self.hidden_dropout_prob = None
+            self.attention_probs_dropout_prob = None
+            self.initializer_range = None
+            self.layer_norm_eps = None
+            self.share_layer = None
+            self.pre_layer_norm = None
 
 
 def prune_linear_layer(layer, index, dim=0):
@@ -338,6 +353,8 @@ class TransformerLayer(nn.Module):
 class TransformerEncoder(nn.Module):
     def __init__(self, config, output_attentions=False, keep_multihead_output=False):
         super(TransformerEncoder, self).__init__()
+        self.config = config
+
         self.output_attentions = output_attentions
         self.pre_layer_norm = config.pre_layer_norm
         layer = TransformerLayer(config, output_attentions=output_attentions,
@@ -400,6 +417,9 @@ class TransformerSpecPredictionHead(nn.Module):
 
 
 class TransformerInitModel(nn.Module):
+
+    base_model_prefix = "transformer"
+
     """ An abstract class to handle weights initialization."""
     def __init__(self, config, output_attentions, *inputs, **kwargs):
         super(TransformerInitModel, self).__init__()
@@ -418,6 +438,13 @@ class TransformerInitModel(nn.Module):
             module.weight.data.fill_(1.0)
         if isinstance(module, nn.Linear) and module.bias is not None:
             module.bias.data.zero_()
+
+    @property
+    def base_model(self) -> nn.Module:
+        """
+        `torch.nn.Module`: The main body of the model.
+        """
+        return getattr(self, self.base_model_prefix, self)
 
 
 class TransformerModel(TransformerModelAdaptersMixin, TransformerInitModel):
@@ -467,6 +494,9 @@ class TransformerModel(TransformerModelAdaptersMixin, TransformerInitModel):
     """
     def __init__(self, config, input_dim, output_attentions=False, keep_multihead_output=False, with_input_module=True):
         super(TransformerModel, self).__init__(config, output_attentions)
+        # # super().__init__(config)
+        # super(TransformerInitModel, self).__init__(config, output_attentions)
+        # super(TransformerModelAdaptersMixin, self).__init__(config)
         self.with_input_module = with_input_module
         if self.with_input_module: self.input_representations = TransformerInputRepresentations(config, input_dim)
         self.encoder = TransformerEncoder(config, output_attentions=output_attentions,

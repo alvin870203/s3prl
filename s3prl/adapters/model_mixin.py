@@ -101,7 +101,7 @@ class ModelAdaptersMixin(PushAdapterToHubMixin, ABC):
 
     def __init__(self, config, *args, **kwargs):
         super().__init__(config, *args, **kwargs)
-        if config.name_or_path and not os.path.exists(config.name_or_path):
+        if hasattr(config, "name_or_path") and config.name_or_path and not os.path.exists(config.name_or_path):
             self.model_name = config.name_or_path
         else:
             self.model_name = None
@@ -132,7 +132,7 @@ class ModelAdaptersMixin(PushAdapterToHubMixin, ABC):
         for fusion_name in self.config.adapters.fusions:
             self.apply_to_adapter_layers(lambda i, layer: layer.add_fusion_layer(fusion_name))
 
-        self.loaded_embeddings["default"] = self.get_input_embeddings()
+        # self.loaded_embeddings["default"] = self.get_input_embeddings()
 
     # These methods have to be implemented by every deriving class:
 
