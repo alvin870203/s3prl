@@ -1,6 +1,6 @@
 import types
 
-# from ...configuration_utils import PretrainedConfig
+from ...configuration_utils import PretrainedConfig
 # from ...models.encoder_decoder.configuration_encoder_decoder import EncoderDecoderConfig
 from ..configuration import ModelAdaptersConfig
 
@@ -56,8 +56,7 @@ def _to_dict_new(self):
     return output
 
 
-# def wrap_config(config: PretrainedConfig) -> PretrainedConfig:
-def wrap_config(config):
+def wrap_config(config: PretrainedConfig) -> PretrainedConfig:
     """
     Makes required changes to a model config class to allow usage with adapters.
 

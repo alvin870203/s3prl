@@ -362,7 +362,7 @@ class TransformerEncoder(nn.Module):
         if config.share_layer:
             self.layer = nn.ModuleList([layer for _ in range(config.num_hidden_layers)])
         else:
-            self.layer = nn.ModuleList([copy.deepcopy(layer) for _ in range(config.num_hidden_layers)])
+            self.layer = nn.ModuleList([TransformerLayer(config) for _ in range(config.num_hidden_layers)])
         if self.pre_layer_norm:
             # If pre-LN Transformer, a final layer_norm would be placed after the last layer,
             # and intermediate layer_norms for all layer embedding outputs
@@ -494,14 +494,12 @@ class TransformerModel(TransformerModelAdaptersMixin, TransformerInitModel):
     """
     def __init__(self, config, input_dim, output_attentions=False, keep_multihead_output=False, with_input_module=True):
         super(TransformerModel, self).__init__(config, output_attentions)
-        # # super().__init__(config)
-        # super(TransformerInitModel, self).__init__(config, output_attentions)
-        # super(TransformerModelAdaptersMixin, self).__init__(config)
+        self.config = config
+        
         self.with_input_module = with_input_module
         if self.with_input_module: self.input_representations = TransformerInputRepresentations(config, input_dim)
         self.encoder = TransformerEncoder(config, output_attentions=output_attentions,
                                           keep_multihead_output=keep_multihead_output)
-        self.config = config
         
         self._init_adapter_modules()
         
