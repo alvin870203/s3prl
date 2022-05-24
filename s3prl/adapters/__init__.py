@@ -20,7 +20,7 @@ __version__ = "3.0.1"
 
 from typing import TYPE_CHECKING
 
-from ..file_utils import _LazyModule
+# from ..file_utils import _LazyModule
 
 
 _import_structure = {
@@ -211,12 +211,12 @@ if TYPE_CHECKING:
         list_adapters,
     )
 
-else:
-    import sys
+# else:
+#     import sys
 
-    sys.modules[__name__] = _LazyModule(
-        __name__,
-        globals()["__file__"],
-        _import_structure,
-        extra_objects={"__version__": __version__},
-    )
+#     sys.modules[__name__] = _LazyModule(
+#         __name__,
+#         globals()["__file__"],
+#         _import_structure,
+#         extra_objects={"__version__": __version__},
+#     )

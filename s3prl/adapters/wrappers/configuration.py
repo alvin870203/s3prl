@@ -1,7 +1,7 @@
 import types
 
-from ...configuration_utils import PretrainedConfig
-from ...models.encoder_decoder.configuration_encoder_decoder import EncoderDecoderConfig
+# from ...configuration_utils import PretrainedConfig
+# from ...models.encoder_decoder.configuration_encoder_decoder import EncoderDecoderConfig
 from ..configuration import ModelAdaptersConfig
 
 
@@ -55,7 +55,8 @@ def _to_dict_new(self):
     return output
 
 
-def wrap_config(config: PretrainedConfig) -> PretrainedConfig:
+# def wrap_config(config: PretrainedConfig) -> PretrainedConfig:
+def wrap_config(config):
     """
     Makes required changes to a model config class to allow usage with adapters.
 
@@ -95,12 +96,12 @@ def wrap_config(config: PretrainedConfig) -> PretrainedConfig:
     if not hasattr(config, "custom_heads"):
         config.custom_heads = {}
 
-    if isinstance(config, EncoderDecoderConfig):
-        # make sure adapter config is shared
-        wrap_config(config.encoder)
-        wrap_config(config.decoder)
-        config.decoder.adapters = config.encoder.adapters
-        config.adapters = config.encoder.adapters
+    # if isinstance(config, EncoderDecoderConfig):
+    #     # make sure adapter config is shared
+    #     wrap_config(config.encoder)
+    #     wrap_config(config.decoder)
+    #     config.decoder.adapters = config.encoder.adapters
+    #     config.adapters = config.encoder.adapters
 
     config.is_adaptable = True
 

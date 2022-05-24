@@ -611,34 +611,34 @@ class ModelAdaptersMixin(PushAdapterToHubMixin, ABC):
 
         context.prefix_states = self.base_model.prefix_tuning(*args, **kwargs)
 
-    def load_embeddings(self, path: str, name: str):
-        """
-        Load a saved embedding from the given path. If the embedding was saved with a tokenizer it is returned
+    # def load_embeddings(self, path: str, name: str):
+    #     """
+    #     Load a saved embedding from the given path. If the embedding was saved with a tokenizer it is returned
 
-        Args:
-            path: the path to the saved embedding
-            name: the name the embedding should be loaded as
+    #     Args:
+    #         path: the path to the saved embedding
+    #         name: the name the embedding should be loaded as
 
-        Returns: a tokenizer if it ws saved with the embedding otherwise None
+    #     Returns: a tokenizer if it ws saved with the embedding otherwise None
 
-        """
-        from ..models.auto.tokenization_auto import AutoTokenizer
+    #     """
+    #     from ..models.auto.tokenization_auto import AutoTokenizer
 
-        if name in self.loaded_embeddings:
-            raise ValueError("An embedding with the name {} already exists".format(name))
-        tokenizer = None
-        tokenizer_path = os.path.join(path, TOKENIZER_PATH)
-        if os.path.isdir(tokenizer_path):
-            tokenizer = AutoTokenizer.from_pretrained(tokenizer_path)
+    #     if name in self.loaded_embeddings:
+    #         raise ValueError("An embedding with the name {} already exists".format(name))
+    #     tokenizer = None
+    #     tokenizer_path = os.path.join(path, TOKENIZER_PATH)
+    #     if os.path.isdir(tokenizer_path):
+    #         tokenizer = AutoTokenizer.from_pretrained(tokenizer_path)
 
-        embedding_path = os.path.join(path, EMBEDDING_FILE)
-        if not os.path.isfile(embedding_path):
-            raise FileNotFoundError("No embeddings found at {}".format(embedding_path))
-        weights = torch.load(embedding_path)
+    #     embedding_path = os.path.join(path, EMBEDDING_FILE)
+    #     if not os.path.isfile(embedding_path):
+    #         raise FileNotFoundError("No embeddings found at {}".format(embedding_path))
+    #     weights = torch.load(embedding_path)
 
-        self.loaded_embeddings[name] = nn.Embedding.from_pretrained(weights)
-        self.set_active_embeddings(name)
-        return tokenizer
+    #     self.loaded_embeddings[name] = nn.Embedding.from_pretrained(weights)
+    #     self.set_active_embeddings(name)
+    #     return tokenizer
 
     def add_embeddings(self, name, tokenizer, reference_embedding=None, reference_tokenizer=None, embedding_dim=None):
         """
@@ -862,7 +862,7 @@ class ModelWithHeadsAdaptersMixin(ModelAdaptersMixin):
         self,
         save_directory: str,
         adapter_name: str,
-        with_head: bool = True,
+        with_head: bool = False,
         meta_dict: dict = None,
         custom_weights_loaders: Optional[List[WeightsLoader]] = None,
     ):
@@ -885,7 +885,7 @@ class ModelWithHeadsAdaptersMixin(ModelAdaptersMixin):
         model_name: str = None,
         load_as: str = None,
         source: str = None,
-        with_head: bool = True,
+        with_head: bool = False,
         custom_weights_loaders: Optional[List[WeightsLoader]] = None,
         leave_out: Optional[List[int]] = None,
         id2label=None,
@@ -923,7 +923,7 @@ class ModelWithHeadsAdaptersMixin(ModelAdaptersMixin):
     def save_all_adapters(
         self,
         save_directory: str,
-        with_head: bool = True,
+        with_head: bool = False,
         meta_dict: dict = None,
         custom_weights_loaders: Optional[List[WeightsLoader]] = None,
     ):
@@ -988,7 +988,7 @@ class ModelWithHeadsAdaptersMixin(ModelAdaptersMixin):
         load_as: str = None,
         custom_weights_loaders: Optional[List[WeightsLoader]] = None,
         set_active: bool = False,
-        with_head: bool = True,
+        with_head: bool = False,
         **kwargs
     ) -> str:
         if with_head:
@@ -1018,11 +1018,11 @@ class ModelWithHeadsAdaptersMixin(ModelAdaptersMixin):
         else:
             return self.base_model.get_adapter(name)
 
-    def load_embeddings(self, path: str, name: str):
-        if self.base_model is self:
-            return super().load_embeddings(path, name)
-        else:
-            return self.base_model.load_embeddings(path, name)
+    # def load_embeddings(self, path: str, name: str):
+    #     if self.base_model is self:
+    #         return super().load_embeddings(path, name)
+    #     else:
+    #         return self.base_model.load_embeddings(path, name)
 
     def save_embeddings(self, path, name, tokenizer=None):
         if self.base_model is self:
