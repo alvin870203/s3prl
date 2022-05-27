@@ -20,12 +20,13 @@ from io import open
 from torch import nn
 
 from typing import Optional, Tuple, Dict, Any
-from ...adapters.composition import adjust_tensors_for_parallel  # FIXME: not sure where to add
-from ...adapters.context import ForwardContext
-from ...adapters.mixins.transformer import TransformerModelAdaptersMixin, TransformerOutputAdaptersMixin, TransformerSelfOutputAdaptersMixin
-# from ...adapters.model_mixin import ModelWithHeadsAdaptersMixin
-from ...adapters.prefix_tuning import PrefixTuningShim
-from ...configuration_utils import PretrainedConfig
+from transformers.adapters.composition import adjust_tensors_for_parallel  # FIXME: not sure where to add
+from transformers.adapters.context import ForwardContext
+from transformers.adapters.lora import Linear as LoRALinear
+from transformers.adapters.mixins.transformer import TransformerModelAdaptersMixin, TransformerOutputAdaptersMixin, TransformerSelfOutputAdaptersMixin
+# from transformers.adapters.model_mixin import ModelWithHeadsAdaptersMixin
+from transformers.adapters.prefix_tuning import PrefixTuningShim
+from transformers.configuration_utils import PretrainedConfig
 
 
 class TransformerConfig(PretrainedConfig):
@@ -154,9 +155,9 @@ class TransformerSelfAttention(nn.Module):
         self.attention_head_size = int(config.hidden_size / config.num_attention_heads)
         self.all_head_size = self.num_attention_heads * self.attention_head_size
 
-        self.query = nn.Linear(config.hidden_size, self.all_head_size)
+        self.query = LoRALinear(config.hidden_size, self.all_head_size, "selfattn", config)
         self.key = nn.Linear(config.hidden_size, self.all_head_size)
-        self.value = nn.Linear(config.hidden_size, self.all_head_size)
+        self.value = LoRALinear(config.hidden_size, self.all_head_size, "selfattn", config)
 
         self.dropout = nn.Dropout(config.attention_probs_dropout_prob)
         
@@ -284,7 +285,7 @@ class TransformerAttention(nn.Module):
 class TransformerIntermediate(nn.Module):
     def __init__(self, config):
         super(TransformerIntermediate, self).__init__()
-        self.dense = nn.Linear(config.hidden_size, config.intermediate_size)
+        self.dense = LoRALinear(config.hidden_size, config.intermediate_size, "intermediate", config)
         if isinstance(config.hidden_act, str) or (sys.version_info[0] == 2 and isinstance(config.hidden_act, unicode)):
             self.intermediate_act_fn = ACT2FN[config.hidden_act]
         else:
@@ -302,7 +303,7 @@ class TransformerOutput(TransformerOutputAdaptersMixin, nn.Module):
         self.config = config
         
         self.pre_layer_norm = config.pre_layer_norm
-        self.dense = nn.Linear(config.intermediate_size, config.hidden_size)
+        self.dense = LoRALinear(config.intermediate_size, config.hidden_size, "output", config)
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
         self.LayerNorm = TransformerLayerNorm(config.hidden_size, eps=config.layer_norm_eps) # layer_norm for FFN
         self._init_adapter_modules()
@@ -503,6 +504,9 @@ class TransformerModel(TransformerModelAdaptersMixin, TransformerInitModel):
         self._init_adapter_modules()
         
         self.apply(self.init_Transformer_weights)
+
+    def get_input_embeddings(self):
+        return self.input_representations.spec_transform
 
     def prune_heads(self, heads_to_prune):
         """ Prunes heads of the model.
