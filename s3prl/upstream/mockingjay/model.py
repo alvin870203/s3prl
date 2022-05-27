@@ -233,7 +233,7 @@ class TransformerSelfOutput(TransformerSelfOutputAdaptersMixin, nn.Module):
         if not self.pre_layer_norm:
             hidden_states = self.adapter_layer_forward(hidden_states, input_tensor, self.LayerNorm)
         else:
-            hidden_states = self.adapter_layer_forward(hidden_states, input_tensor)
+            hidden_states = self.adapter_layer_forward(hidden_states, input_tensor, layer_norm=None)
         return hidden_states
 
 
@@ -317,7 +317,7 @@ class TransformerOutput(TransformerOutputAdaptersMixin, nn.Module):
         if not self.pre_layer_norm:
             hidden_states = self.adapter_layer_forward(hidden_states, input_tensor, self.LayerNorm)
         else:
-            hidden_states = self.adapter_layer_forward(hidden_states, input_tensor)
+            hidden_states = self.adapter_layer_forward(hidden_states, input_tensor, layer_norm=None)
         return hidden_states
 
 
